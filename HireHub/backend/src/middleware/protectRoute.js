@@ -1,77 +1,74 @@
 import User from "../models/User.js";
 import { upsertStreamUser } from "../lib/stream.js";
 
-export const protectRoute = async (req, res, next) => {
-  try {
-    // ⭐ DEBUG: Log auth state
-    console.log("\n🔍 protectRoute AUTH DEBUG:");
-    console.log("   req.auth exists:", !!req.auth);
-    if (req.auth) {
-      console.log("   req.auth.userId:", req.auth.userId);
-      console.log("   req.auth.sessionId:", req.auth.sessionId);
-      console.log("   req.auth keys:", Object.keys(req.auth));
-    }
+export const protectRoute = (req, res, next) => {
+  console.log("\n🔐 protectRoute CHECKING AUTH...");
+  console.log("   req.auth exists:", !!req.auth);
+  console.log("   req.auth type:", typeof req.auth);
+  
+  if (req.auth) {
+    console.log("   req.auth.userId:", req.auth.userId);
+    console.log("   req.auth.sessionId:", req.auth.sessionId);
+  }
 
-    // Get clerkId from req.auth (set by clerkMiddleware)
-    const clerkId = req.auth?.userId;
-
-    if (!clerkId) {
-      console.error("❌ protectRoute: clerkId is missing! req.auth:", req.auth);
-      return res.status(401).json({ 
-        message: "Unauthorized - missing or invalid token",
+  // ❌ If no auth, return 401 immediately
+  if (!req.auth || !req.auth.userId) {
+    console.error("❌ protectRoute: No authentication found!");
+    console.error("   Full req.auth:", JSON.stringify(req.auth, null, 2));
+    return res.status(401).json({ 
+      message: "Unauthorized - missing authentication token",
+      debug: {
         hasAuth: !!req.auth,
         authKeys: req.auth ? Object.keys(req.auth) : []
-      });
-    }
-
-    console.log(`✅ protectRoute: Found clerkId: ${clerkId}`);
-
-    // Find the user in MongoDB
-    let user = await User.findOne({ clerkId });
-
-    // Create placeholder if not found
-    if (!user) {
-      console.warn(`⚠️ User with clerkId=${clerkId} not found in DB — creating placeholder.`);
-
-      const placeholderEmail = `${clerkId}@no-email.local`;
-      const nameFromAuth = clerkId;
-      const profileImage = "";
-
-      user = await User.create({
-        clerkId,
-        email: placeholderEmail,
-        name: nameFromAuth,
-        profileImage,
-        isAdmin: false,
-      });
-
-      console.log(`✅ Created placeholder user: ${user._id} (${user.name})`);
-    }
-
-    // Attach user to req
-    req.user = user;
-    console.log(`✅ req.user attached: ${user._id} (${user.clerkId})`);
-
-    // ⭐ Upsert Stream user (for video + chat)
-    try {
-      await upsertStreamUser({
-        id: user.clerkId,
-        name: user.name,
-        image: user.profileImage || "",
-      });
-      console.log(`✅ Stream user upserted: ${user.clerkId}`);
-    } catch (streamError) {
-      console.error(`⚠️ Stream user upsert failed: ${streamError.message}`);
-      // Don't fail the request - Stream issues shouldn't block API access
-    }
-
-    next();
-  } catch (error) {
-    console.error("❌ Error in protectRoute middleware:", error.message);
-    console.error("   Stack:", error.stack);
-    return res.status(500).json({ 
-      message: "Internal Server Error in protectRoute",
-      error: process.env.NODE_ENV !== "production" ? error.message : undefined
+      }
     });
   }
+
+  const clerkId = req.auth.userId;
+  console.log(`✅ protectRoute: Found clerkId: ${clerkId}`);
+
+  // ⭐ Do DB lookup + Stream upsert asynchronously
+  (async () => {
+    try {
+      // Find user in MongoDB
+      let user = await User.findOne({ clerkId });
+
+      if (!user) {
+        console.warn(`⚠️ User not found, creating placeholder for ${clerkId}`);
+        user = await User.create({
+          clerkId,
+          email: `${clerkId}@no-email.local`,
+          name: clerkId,
+          profileImage: "",
+          isAdmin: false,
+        });
+        console.log(`✅ Created placeholder user: ${user._id}`);
+      }
+
+      // Attach user to request
+      req.user = user;
+      console.log(`✅ req.user set: ${user._id}`);
+
+      // Upsert Stream user
+      try {
+        await upsertStreamUser({
+          id: user.clerkId,
+          name: user.name,
+          image: user.profileImage || "",
+        });
+        console.log(`✅ Stream user upserted`);
+      } catch (streamError) {
+        console.warn(`⚠️ Stream upsert failed: ${streamError.message}`);
+      }
+
+      // Now call the actual route handler
+      next();
+    } catch (error) {
+      console.error("❌ protectRoute async error:", error.message);
+      return res.status(500).json({ 
+        message: "Internal Server Error",
+        error: process.env.NODE_ENV === "development" ? error.message : undefined
+      });
+    }
+  })();
 };
