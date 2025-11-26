@@ -22,54 +22,33 @@ console.log("🚀 HireHub Backend Starting...");
 console.log(`📌 Environment: ${ENV.NODE_ENV}`);
 console.log(`📌 Port: ${ENV.PORT}`);
 
-/* ----------------------------------------------------------
-   1) JSON middleware
------------------------------------------------------------ */
 app.use(express.json());
 console.log("✅ JSON middleware loaded");
 
-/* ----------------------------------------------------------
-   2) GLOBAL OPTIONS HANDLER (Clerk ko skip karta hai)
------------------------------------------------------------ */
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") {
     const origin = req.headers.origin;
-
-    // ⭐⭐⭐ FINAL FIX ⭐⭐⭐
     res.header("Access-Control-Allow-Origin", origin);
     res.header("Access-Control-Allow-Credentials", "true");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Authorization, Content-Type, Accept"
-    );
-    res.header(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS"
-    );
-
+    res.header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     return res.sendStatus(200);
   }
   next();
 });
 
-/* ----------------------------------------------------------
-   3) CORS (allow localhost + main domain + ALL previews)
------------------------------------------------------------ */
 app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-
       const allowed = [
         "http://localhost:5173",
         "http://localhost:5174",
         "https://hire-board-eexv.vercel.app",
-          "https://hire-board.vercel.app" 
+        "https://hire-board.vercel.app" 
       ];
-
       if (allowed.includes(origin)) return cb(null, true);
       if (origin.endsWith(".vercel.app")) return cb(null, true);
-
       console.log("❌ CORS Blocked:", origin);
       return cb(new Error("CORS Blocked: " + origin), false);
     },
@@ -78,15 +57,9 @@ app.use(
 );
 console.log("✅ CORS middleware loaded");
 
-/* ----------------------------------------------------------
-   4) CLERK — MUST come AFTER CORS + OPTIONS
------------------------------------------------------------ */
 app.use(clerkMiddleware());
 console.log("✅ Clerk middleware loaded");
 
-/* ----------------------------------------------------------
-   4.5) REQUEST LOGGING (for debugging)
------------------------------------------------------------ */
 app.use((req, res, next) => {
   if (req.path.startsWith("/api")) {
     console.log(`\n📨 API Request: ${req.method} ${req.path}`);
@@ -95,9 +68,6 @@ app.use((req, res, next) => {
   next();
 });
 
-/* ----------------------------------------------------------
-   5) API ROUTES
------------------------------------------------------------ */
 app.use("/api/inngest", serve({ client: inngest, functions }));
 console.log("✅ Inngest routes registered");
 
@@ -113,24 +83,15 @@ console.log("✅ Problem routes registered");
 app.use("/api/admin", adminRoutes);
 console.log("✅ Admin routes registered");
 
-/* ----------------------------------------------------------
-   6) HEALTH CHECK
------------------------------------------------------------ */
 app.get("/health", (req, res) => {
   res.status(200).json({ msg: "API is running!" });
 });
 console.log("✅ Health check route registered");
 
-/* ----------------------------------------------------------
-   7) RAILWAY BACKEND-ONLY
------------------------------------------------------------ */
 app.get("/", (req, res) => {
   res.send("HireBoard Backend Running");
 });
 
-/* ----------------------------------------------------------
-   8) 404 Handler
------------------------------------------------------------ */
 app.use((req, res) => {
   res.status(404).json({
     error: "API route not found",
@@ -138,29 +99,22 @@ app.use((req, res) => {
   });
 });
 
-/* ----------------------------------------------------------
-   START SERVER
------------------------------------------------------------ */
 const start = async () => {
   try {
     console.log("\n📚 Connecting to Database...");
     await connectDB();
     console.log("✅ Database connected successfully\n");
 
-    // Create HTTP server for Socket.IO
     const http = createServer(app);
 
-    // Helper to validate allowed origins for sockets (allows localhost in dev)
     const socketAllowed = (origin) => {
-      if (!origin) return true; // allow non-browser (e.g. server-side) connections
-
+      if (!origin) return true;
       const allowed = [
         "http://localhost:5173",
         "http://localhost:5174",
         "https://hire-board-eexv.vercel.app",
         "https://hire-board.vercel.app",
       ];
-
       if (allowed.includes(origin)) return true;
       if (origin.endsWith(".vercel.app")) return true;
       return false;
@@ -182,24 +136,20 @@ const start = async () => {
     console.log("🔌 Socket.IO server initialized");
     console.log(`📨 CORS origin configured for: ${ENV.CLIENT_URL || "all origins"}`);
 
-    /* Socket.IO Connection Handler */
     io.on("connection", async (socket) => {
       const { room, clerkId } = socket.handshake.query;
       
       console.log(`\n🔗 Socket connection attempt - room: ${room}, clerkId: ${clerkId}`);
 
-      // Validate parameters
       if (!room || !clerkId) {
         console.log("❌ Missing room or clerkId in socket handshake");
         socket.emit("error", "Missing room or clerkId");
         return socket.disconnect();
       }
 
-      // Verify user is allowed in this room
       if (!isAllowed(room, clerkId)) {
         console.log(`❌ User ${clerkId} not present in socketStore for room ${room}. Trying DB fallback.`);
 
-        // DB fallback: if session exists and user is host or participant, allow automatically
         try {
           const sessionDoc = await Session.findOne({ callId: room }).populate("host", "clerkId").populate("participant", "clerkId");
           if (sessionDoc) {
@@ -208,7 +158,6 @@ const start = async () => {
             if (clerkId === hostClerk || clerkId === partClerk) {
               console.log(`✅ DB fallback allowed user ${clerkId} for room ${room} (host/participant match)`);
               addAllowed(room, clerkId);
-              // continue to allow connection
             } else {
               console.log(`❌ DB fallback did not match host/participant for ${clerkId} in room ${room}`);
               socket.emit("error", "not_allowed");
@@ -231,7 +180,6 @@ const start = async () => {
       socket.emit("connected", { room, clerkId });
       io.to(room).emit("user_joined", { clerkId, timestamp: Date.now() });
 
-      /* Message Handler */
       socket.on("message", (data) => {
         const { text } = data;
         if (!text || !text.trim()) return;
@@ -246,27 +194,23 @@ const start = async () => {
         io.to(room).emit("message", message);
       });
 
-      /* Code Change Handler */
       socket.on("code_change", (data) => {
         const { code, language } = data;
         console.log(`⌨️  Code change in ${room} from ${clerkId}`);
         io.to(room).emit("code_change", { clerkId, code, language });
       });
 
-      /* Typing Indicator Handler */
       socket.on("typing", (data) => {
         const { isTyping } = data;
         socket.to(room).emit("typing", { clerkId, isTyping });
       });
 
-      /* Disconnect Handler */
       socket.on("disconnect", () => {
         console.log(`🔌 User ${clerkId} disconnected from room ${room}`);
         removeAllowed(room, clerkId);
         io.to(room).emit("user_left", { clerkId, timestamp: Date.now() });
       });
 
-      /* Error Handler */
       socket.on("error", (err) => {
         console.error(`❌ Socket error for ${clerkId} in ${room}:`, err);
       });
