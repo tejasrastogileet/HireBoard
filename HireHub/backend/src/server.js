@@ -77,10 +77,7 @@ console.log("✅ CORS middleware loaded");
 /* ----------------------------------------------------------
    4) CLERK — MUST come AFTER CORS + OPTIONS
 ----------------------------------------------------------- */
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") return next();
-  return clerkMiddleware()(req, res, next);
-});
+app.use(clerkMiddleware());
 console.log("✅ Clerk middleware loaded");
 
 /* ----------------------------------------------------------
