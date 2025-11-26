@@ -17,7 +17,7 @@ const problemSchema = z.object({
     .optional(),
   examples: z.array(exampleSchema).optional(),
   constraints: z.array(z.string()).optional(),
-  starterCode: z.record(z.string()).optional(),
+  starterCode: z.union([z.record(z.string()), z.string()]).optional(),
   expectedOutput: z.record(z.string()).optional(),
 });
 
@@ -25,9 +25,26 @@ const problemUpdateSchema = problemSchema.partial();
 
 export async function createProblem(req, res) {
   try {
+    console.log('\n🛠 createProblem called');
+    console.log('   req.auth exists:', !!req.auth);
+    try { console.log('   req.auth:', req.auth); } catch (e) { console.log('   req.auth log failed'); }
+    try { console.log('   req.user:', req.user ? { id: req.user._id, clerkId: req.user.clerkId } : null); } catch (e) { console.log('   req.user log failed'); }
+    console.log('   body preview:', JSON.stringify(req.body).substring(0, 500));
+
     // validate payload
     const parsed = problemSchema.parse(req.body);
     const payload = parsed;
+
+    // If starterCode is a string, parse it to an object
+    if (typeof payload.starterCode === 'string') {
+      try {
+        payload.starterCode = JSON.parse(payload.starterCode);
+      } catch (parseErr) {
+        console.warn('⚠️ Failed to parse starterCode JSON:', parseErr.message);
+        payload.starterCode = {};
+      }
+    }
+
     // ensure a slug exists (simple fallback)
     if (!payload.slug && payload.title) {
       payload.slug = payload.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -35,8 +52,18 @@ export async function createProblem(req, res) {
 
     payload.createdBy = req.user?.clerkId || null;
 
-    const problem = await Problem.create(payload);
-    res.status(201).json({ problem });
+    try {
+      const problem = await Problem.create(payload);
+      console.log(`✅ Problem created: ${problem._id} (slug: ${problem.slug})`);
+      res.status(201).json({ problem });
+    } catch (dbErr) {
+      // Handle duplicate key (slug) nicely
+      if (dbErr && dbErr.code === 11000) {
+        console.warn('⚠️ Duplicate slug detected when creating problem:', dbErr.keyValue || dbErr.message);
+        return res.status(409).json({ message: 'Problem with the same slug already exists', detail: dbErr.keyValue || dbErr.message });
+      }
+      throw dbErr;
+    }
   } catch (error) {
     console.error("Error in createProblem:", error);
     if (error instanceof z.ZodError) {
@@ -48,7 +75,12 @@ export async function createProblem(req, res) {
 
 export async function getProblems(req, res) {
   try {
+    console.log('\n🔎 getProblems called');
+    console.log('   req.auth exists:', !!req.auth);
+    try { console.log('   req.user:', req.user ? { id: req.user._id, clerkId: req.user.clerkId } : null); } catch (e) { console.log('   req.user log failed'); }
+
     const problems = await Problem.find().sort({ createdAt: -1 });
+    console.log(`✅ Returning ${problems.length} problems`);
     res.status(200).json({ problems });
   } catch (error) {
     console.error("Error in getProblems:", error);

@@ -1,12 +1,36 @@
 import { Link } from "react-router";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-
+import { problemApi } from "../api/problems";
 import { PROBLEMS } from "../data/problems";
 import { ChevronRightIcon, Code2Icon } from "lucide-react";
 import { getDifficultyBadgeClass } from "../lib/utils";
 
 function ProblemsPage() {
-  const problems = Object.values(PROBLEMS);
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProblems = async () => {
+      try {
+        const res = await problemApi.getProblems();
+        // Start with static problems, then add API problems
+        const staticProblems = Object.values(PROBLEMS);
+        const apiProblems = res?.problems || [];
+        
+        // Merge: static problems first, then new API problems
+        setProblems([...staticProblems, ...apiProblems]);
+      } catch (err) {
+        console.error("Failed to fetch problems:", err);
+        // Fallback to static problems only
+        setProblems(Object.values(PROBLEMS));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProblems();
+  }, []);
 
   const easyProblemsCount = problems.filter((p) => p.difficulty === "Easy").length;
   const mediumProblemsCount = problems.filter((p) => p.difficulty === "Medium").length;
@@ -26,44 +50,54 @@ function ProblemsPage() {
         </div>
 
         {/* PROBLEMS LIST */}
-        <div className="space-y-4">
-          {problems.map((problem) => (
-            <Link
-              key={problem.id}
-              to={`/problem/${problem.id}`}
-              className="card bg-base-100 hover:scale-[1.01] transition-transform"
-            >
-              <div className="card-body">
-                <div className="flex items-center justify-between gap-4">
-                  {/* LEFT SIDE */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Code2Icon className="size-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h2 className="text-xl font-bold">{problem.title}</h2>
-                          <span className={`badge ${getDifficultyBadgeClass(problem.difficulty)}`}>
-                            {problem.difficulty}
-                          </span>
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        ) : problems.length === 0 ? (
+          <div className="alert alert-info">
+            <span>No problems available yet.</span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {problems.map((problem) => (
+              <Link
+                key={problem._id || problem.id}
+                to={`/problem/${problem._id || problem.id}`}
+                className="card bg-base-100 hover:scale-[1.01] transition-transform"
+              >
+                <div className="card-body">
+                  <div className="flex items-center justify-between gap-4">
+                    {/* LEFT SIDE */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Code2Icon className="size-6 text-primary" />
                         </div>
-                        <p className="text-sm text-base-content/60"> {problem.category}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h2 className="text-xl font-bold">{problem.title}</h2>
+                            <span className={`badge ${getDifficultyBadgeClass(problem.difficulty)}`}>
+                              {problem.difficulty}
+                            </span>
+                          </div>
+                          <p className="text-sm text-base-content/60">{problem.category}</p>
+                        </div>
                       </div>
+                      <p className="text-base-content/80 mb-3">{problem.description?.text || ""}</p>
                     </div>
-                    <p className="text-base-content/80 mb-3">{problem.description.text}</p>
-                  </div>
-                  {/* RIGHT SIDE */}
+                    {/* RIGHT SIDE */}
 
-                  <div className="flex items-center gap-2 text-primary">
-                    <span className="font-medium">Solve</span>
-                    <ChevronRightIcon className="size-5" />
+                    <div className="flex items-center gap-2 text-primary">
+                      <span className="font-medium">Solve</span>
+                      <ChevronRightIcon className="size-5" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* STATS FOOTER */}
         <div className="mt-12 card bg-base-100 shadow-lg">

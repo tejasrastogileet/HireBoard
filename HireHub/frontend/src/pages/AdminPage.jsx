@@ -31,7 +31,8 @@ function AdminPage() {
   const fetchProblems = async () => {
     try {
       const res = await problemApi.getProblems();
-      setProblems(res.data || []);
+      // problemApi returns the parsed response object: { problems: [...] }
+      setProblems(res?.problems || []);
     } catch (err) {
       console.error("fetchProblems", err);
     }
@@ -40,7 +41,8 @@ function AdminPage() {
   const fetchUsers = async () => {
     try {
       const res = await adminApi.listUsers();
-      setUsers(res.data || []);
+      // adminApi.listUsers returns { users: [...] }
+      setUsers(res?.users || []);
     } catch (err) {
       console.error("fetchUsers", err);
     }
