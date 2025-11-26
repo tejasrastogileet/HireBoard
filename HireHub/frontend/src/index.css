@@ -1,0 +1,141 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Poppins:wght@400;600;700&display=swap');
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: all;
+}
+
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --muted: #9aa3b2;
+  --primary: #111111; /* black primary button */
+  --glass: rgba(255,255,255,0.6);
+  --shadow-sm: 0 6px 12px rgba(16,24,40,0.06);
+  --shadow-md: 0 12px 30px rgba(16,24,40,0.08);
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background: var(--bg);
+  color: #0f172a;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* Neumorphism / Glass card */
+.glass-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(16,24,40,0.04);
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+.neumo {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 8px 8px 20px rgba(16,24,40,0.06), -6px -6px 16px rgba(255,255,255,0.7);
+  border: 1px solid rgba(16,24,40,0.03);
+}
+
+.primary-black-btn {
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+.primary-black-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); opacity: .98 }
+
+.glass-hero {
+  background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(245,246,250,0.6));
+  border-radius: 28px;
+  padding: 3rem;
+  box-shadow: 0 20px 40px rgba(16,24,40,0.06);
+}
+
+/* subtle transitions */
+.smooth { transition: all .2s ease; }
+.hover-scale:hover { transform: translateY(-6px) scale(1.01); }
+
+/* form field focus */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  border-color: rgba(16,24,40,0.08);
+}
+
+@layer base {
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer }
+}
+
+/* Minimal dark-mode overrides */
+html.dark body { background: #0b0f12; color: #e6f7ff }
+html.dark .card, html.dark .card-body, html.dark .neumo { background: #0f1720; color: #e6f7ff }
+html.dark .glass-hero { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03) }
+html.dark .primary-black-btn { background: #0f1720; color: #e6f7ff }
+html.dark .btn-ghost, html.dark .ghost-btn { color: #cfeffb }
+html.dark .text-gray-600 { color: #a8b3bf }
+
+/* Smooth theme transition helper - toggled briefly on theme change */
+html.theme-transition *, html.theme-transition *::before, html.theme-transition *::after {
+  transition: background-color .32s ease, color .32s ease, border-color .32s ease, box-shadow .32s ease, fill .32s ease;
+}
+
+/* Extended dark-mode styling for common UI elements */
+html.dark .glass-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+html.dark .neumo { background: #0f1720; border: 1px solid rgba(255,255,255,0.02); box-shadow: 8px 8px 20px rgba(0,0,0,0.6), -6px -6px 16px rgba(255,255,255,0.01); }
+
+html.dark .card { background: #0f1720; border-color: rgba(255,255,255,0.03); }
+html.dark .card-body { color: #e6f7ff }
+
+html.dark .badge { background: rgba(255,255,255,0.04); color: #dff6ff }
+html.dark .badge-success { background: rgba(16,185,129,0.12); color: #9ef3cf }
+html.dark .badge-error { background: rgba(255,99,132,0.06); color: #ffc9d1 }
+
+html.dark input, html.dark textarea, html.dark select, html.dark .hb-input {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: #e6f7ff;
+}
+
+html.dark .btn, html.dark .btn-primary, html.dark .primary-black-btn { background: #0b1220; color: #e6f7ff; border-color: rgba(255,255,255,0.03) }
+html.dark .btn-ghost { color: #cfeffb }
+
+/* Modal / overlay adjustments */
+html.dark .modal, html.dark .modal-box { background: #0f1720; color: #e6f7ff }
+
+/* Map common light bg classes to dark equivalents for consistent dark mode */
+html.dark .bg-white,
+html.dark .bg-base-100,
+html.dark .bg-base-200,
+html.dark .bg-base-300,
+html.dark .bg-base-400 {
+  background-color: #0f1720 !important;
+  color: #e6f7ff !important;
+}
+
+/* Map common text-muted classes */
+html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-700 {
+  color: #9fb0c1 !important;
+}
+
+/* Ensure dropdowns/menus inherit dark surfaces */
+html.dark .dropdown-content, html.dark .menu, html.dark .menu li {
+  background: #0f1720 !important;
+  color: #e6f7ff !important;
+  border-color: rgba(255,255,255,0.03) !important;
+}
+
+/* Monaco editor container fallback: if monaco isn't themed from inside, ensure surrounding area is dark */
+html.dark .monaco-editor, html.dark .monaco-editor .view-lines, html.dark .monaco-editor .monaco-editor-background {
+  background: #0b1220 !important;
+}
+
+
