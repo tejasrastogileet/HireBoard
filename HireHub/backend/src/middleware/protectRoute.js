@@ -6,47 +6,16 @@ export const protectRoute = (req, res, next) => {
   console.log("   req.auth exists:", !!req.auth);
   console.log("   req.auth type:", typeof req.auth);
   
-    // ----- DEV BYPASS: DISABLE_AUTH=true -----
-    // If you want a quick way to run the server without Clerk, set
-    // the environment variable `DISABLE_AUTH=true` in Railway or locally.
-    // The middleware will create/attach a placeholder dev user so the
-    // rest of the app can run as if authenticated.
-    if (process.env.DISABLE_AUTH === "true") {
-      const devClerkId = req.headers["x-dev-clerk"] || "dev_user_local";
-      console.log(`⚠️ DISABLE_AUTH mode active — attaching dev user: ${devClerkId}`);
+    // Ensure Clerk set req.auth via clerkMiddleware in server.js
 
-      (async () => {
-        try {
-          let user = await User.findOne({ clerkId: devClerkId });
-          if (!user) {
-            user = await User.create({
-              clerkId: devClerkId,
-              email: `${devClerkId}@no-email.local`,
-              name: devClerkId,
-              profileImage: "",
-              isAdmin: true,
-            });
-            console.log(`✅ Created dev placeholder user: ${user._id}`);
-          }
-
-          req.user = user;
-          // Best-effort Stream upsert, do not block on failure
-          try {
-            await upsertStreamUser({ id: user.clerkId, name: user.name, image: user.profileImage || "" });
-            console.log("✅ Stream user upserted for dev user");
-          } catch (e) {
-            console.warn("⚠️ Stream upsert failed for dev user:", e.message);
-          }
-
-          next();
-        } catch (err) {
-          console.error("❌ DEV protectRoute error:", err.message);
-          return res.status(500).json({ message: "Internal Server Error" });
-        }
-      })();
-
-      return;
-    }
+  // Development convenience: allow a controlled bypass when DISABLE_AUTH=true
+  // This is only allowed when NODE_ENV is not 'production'. Do NOT enable in production.
+  if ((!req.auth || !req.auth.userId) && process.env.DISABLE_AUTH === "true" && process.env.NODE_ENV !== "production") {
+    const fakeClerk = process.env.DEV_FAKE_CLERK_ID || "dev_user";
+    console.warn("⚠️ protectRoute: DISABLE_AUTH active — attaching fake auth user for development:", fakeClerk);
+    // Attach a minimal req.auth and continue
+    req.auth = { userId: fakeClerk };
+  }
 
   // ❌ If no auth, return 401 immediately
   if (!req.auth || !req.auth.userId) {

@@ -1,4 +1,5 @@
-import { chatClient, videoServerClient } from "../lib/stream.js";
+import { chatClient } from "../lib/stream.js";
+import { addAllowed, removeAllowed } from "../lib/socketStore.js";
 import Session from "../models/Session.js";
 import AuditLog from "../models/AuditLog.js";
 
@@ -18,17 +19,7 @@ export async function createSession(req, res) {
     const callId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const session = await Session.create({ problem, difficulty, host: userId, callId });
 
-    // Stream video call
-    try {
-      await videoServerClient.video.call("default", callId).getOrCreate({
-        data: {
-          created_by_id: clerkId,
-          custom: { problem, difficulty, sessionId: session._id.toString() },
-        },
-      });
-    } catch (err) {
-      console.error("Warning: failed to create Stream video call", err);
-    }
+    // Video call creation removed (feature deprecated)
 
     // Chat channel
     try {
@@ -147,33 +138,15 @@ export async function joinSession(req, res) {
     }
 
     if (session.participant) {
-      await session.populate("participant", "clerkId");
-      const existingClerkId = session.participant?.clerkId;
-
-      try {
-        const call = videoServerClient.video.call("default", session.callId);
-        const callState = await call.get();
-
-        const activeParticipantIds =
-          callState?.participants?.map((p) => p.user_id) || callState?.participant_ids || [];
-
-        const exists = activeParticipantIds.includes(existingClerkId);
-
-        if (!exists) {
-          session.participant = null;
-          await session.save();
-        } else {
-          return res.status(409).json({ message: "Session is full" });
-        }
-      } catch (err) {
-        console.warn("Stream check failed → clearing participant");
-        session.participant = null;
-        await session.save();
-      }
+      // Without video participant checks, consider session full if a participant exists
+      return res.status(409).json({ message: "Session is full" });
     }
 
     session.participant = userId;
     await session.save();
+
+    // Add participant to Socket.IO allowed list
+    addAllowed(session.callId, clerkId);
 
     const channel = chatClient.channel("messaging", session.callId);
     await channel.addMembers([clerkId]);
@@ -204,6 +177,9 @@ export async function leaveSession(req, res) {
     if (session.participant.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Only the participant can leave" });
     }
+
+    // Remove from Socket.IO allowed list
+    removeAllowed(session.callId, clerkId);
 
     try {
       const channel = chatClient.channel("messaging", session.callId);
@@ -241,11 +217,13 @@ export async function endSession(req, res) {
       return res.status(400).json({ message: "Already completed" });
     }
 
-    const call = videoServerClient.video.call("default", session.callId);
-    await call.delete({ hard: true });
-
-    const channel = chatClient.channel("messaging", session.callId);
-    await channel.delete();
+    // Remove video call deletion (video removed). Keep chat channel cleanup.
+    try {
+      const channel = chatClient.channel("messaging", session.callId);
+      await channel.delete();
+    } catch (err) {
+      console.warn("⚠️ Failed to delete chat channel:", err.message);
+    }
 
     session.status = "completed";
     await session.save();
@@ -274,14 +252,11 @@ export async function endAllSessions(req, res) {
     for (const session of sessions) {
       try {
         try {
-          const call = videoServerClient.video.call("default", session.callId);
-          await call.delete({ hard: true });
-        } catch {}
-
-        try {
           const channel = chatClient.channel("messaging", session.callId);
           await channel.delete();
-        } catch {}
+        } catch (e) {
+          console.warn("⚠️ Failed to delete chat channel during endAllSessions:", e.message);
+        }
 
         session.status = "completed";
         await session.save();

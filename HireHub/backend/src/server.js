@@ -1,11 +1,15 @@
 import express from "express";
 import cors from "cors";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { serve } from "inngest/express";
 import { clerkMiddleware } from "@clerk/express";
 
 import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
 import { inngest, functions } from "./lib/inngest.js";
+import { addAllowed, removeAllowed, isAllowed } from "./lib/socketStore.js";
+import Session from "./models/Session.js";
 
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
@@ -143,9 +147,135 @@ const start = async () => {
     await connectDB();
     console.log("✅ Database connected successfully\n");
 
-    app.listen(ENV.PORT, () => {
+    // Create HTTP server for Socket.IO
+    const http = createServer(app);
+
+    // Helper to validate allowed origins for sockets (allows localhost in dev)
+    const socketAllowed = (origin) => {
+      if (!origin) return true; // allow non-browser (e.g. server-side) connections
+
+      const allowed = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://hire-board-eexv.vercel.app",
+        "https://hire-board.vercel.app",
+      ];
+
+      if (allowed.includes(origin)) return true;
+      if (origin.endsWith(".vercel.app")) return true;
+      return false;
+    };
+
+    const io = new Server(http, {
+      cors: {
+        origin: (origin, callback) => {
+          if (socketAllowed(origin)) return callback(null, true);
+          console.log("❌ Socket.IO CORS blocked:", origin);
+          return callback(new Error("CORS Blocked: " + origin), false);
+        },
+        credentials: true,
+        methods: ["GET", "POST"],
+      },
+      transports: ["websocket", "polling"],
+    });
+
+    console.log("🔌 Socket.IO server initialized");
+    console.log(`📨 CORS origin configured for: ${ENV.CLIENT_URL || "all origins"}`);
+
+    /* Socket.IO Connection Handler */
+    io.on("connection", async (socket) => {
+      const { room, clerkId } = socket.handshake.query;
+      
+      console.log(`\n🔗 Socket connection attempt - room: ${room}, clerkId: ${clerkId}`);
+
+      // Validate parameters
+      if (!room || !clerkId) {
+        console.log("❌ Missing room or clerkId in socket handshake");
+        socket.emit("error", "Missing room or clerkId");
+        return socket.disconnect();
+      }
+
+      // Verify user is allowed in this room
+      if (!isAllowed(room, clerkId)) {
+        console.log(`❌ User ${clerkId} not present in socketStore for room ${room}. Trying DB fallback.`);
+
+        // DB fallback: if session exists and user is host or participant, allow automatically
+        try {
+          const sessionDoc = await Session.findOne({ callId: room }).populate("host", "clerkId").populate("participant", "clerkId");
+          if (sessionDoc) {
+            const hostClerk = sessionDoc.host ? sessionDoc.host.clerkId : null;
+            const partClerk = sessionDoc.participant ? sessionDoc.participant.clerkId : null;
+            if (clerkId === hostClerk || clerkId === partClerk) {
+              console.log(`✅ DB fallback allowed user ${clerkId} for room ${room} (host/participant match)`);
+              addAllowed(room, clerkId);
+              // continue to allow connection
+            } else {
+              console.log(`❌ DB fallback did not match host/participant for ${clerkId} in room ${room}`);
+              socket.emit("error", "not_allowed");
+              return socket.disconnect();
+            }
+          } else {
+            console.log(`❌ No session found with callId ${room} during DB fallback`);
+            socket.emit("error", "not_allowed");
+            return socket.disconnect();
+          }
+        } catch (dbErr) {
+          console.error("❌ Socket DB fallback error:", dbErr);
+          socket.emit("error", "not_allowed");
+          return socket.disconnect();
+        }
+      }
+
+      console.log(`✅ User ${clerkId} joined room ${room}`);
+      socket.join(room);
+      socket.emit("connected", { room, clerkId });
+      io.to(room).emit("user_joined", { clerkId, timestamp: Date.now() });
+
+      /* Message Handler */
+      socket.on("message", (data) => {
+        const { text } = data;
+        if (!text || !text.trim()) return;
+
+        const message = {
+          clerkId,
+          text: text.trim(),
+          timestamp: Date.now()
+        };
+
+        console.log(`💬 Message in ${room} from ${clerkId}: ${text.substring(0, 50)}...`);
+        io.to(room).emit("message", message);
+      });
+
+      /* Code Change Handler */
+      socket.on("code_change", (data) => {
+        const { code, language } = data;
+        console.log(`⌨️  Code change in ${room} from ${clerkId}`);
+        io.to(room).emit("code_change", { clerkId, code, language });
+      });
+
+      /* Typing Indicator Handler */
+      socket.on("typing", (data) => {
+        const { isTyping } = data;
+        socket.to(room).emit("typing", { clerkId, isTyping });
+      });
+
+      /* Disconnect Handler */
+      socket.on("disconnect", () => {
+        console.log(`🔌 User ${clerkId} disconnected from room ${room}`);
+        removeAllowed(room, clerkId);
+        io.to(room).emit("user_left", { clerkId, timestamp: Date.now() });
+      });
+
+      /* Error Handler */
+      socket.on("error", (err) => {
+        console.error(`❌ Socket error for ${clerkId} in ${room}:`, err);
+      });
+    });
+
+    http.listen(ENV.PORT, () => {
       console.log(`🚀 Server running on port ${ENV.PORT}`);
       console.log(`📍 API URL: ${ENV.CLIENT_URL || "http://localhost:" + ENV.PORT}`);
+      console.log(`🔗 WebSocket ready for connections\n`);
     });
   } catch (e) {
     console.error("❌ Server start error:", e.message);

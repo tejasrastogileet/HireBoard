@@ -1,5 +1,4 @@
 import { StreamChat } from "stream-chat";
-import { StreamClient } from "@stream-io/node-sdk";
 import { ENV } from "./env.js";
 
 const apiKey = ENV.STREAM_API_KEY;
@@ -24,17 +23,7 @@ try {
   process.exit(1);
 }
 
-/* VIDEO CLIENT */
-let videoServerClient;
-try {
-  videoServerClient = new StreamClient(apiKey, apiSecret);
-  console.log("✅ Video server client initialized successfully");
-} catch (error) {
-  console.error("❌ Failed to initialize Video server client:", error.message);
-  process.exit(1);
-}
-
-export { chatClient, videoServerClient };
+export { chatClient };
 
 /* UPSERT USER */
 export const upsertStreamUser = async (userData) => {

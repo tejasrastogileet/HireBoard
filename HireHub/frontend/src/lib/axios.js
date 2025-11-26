@@ -1,18 +1,16 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-if (!API_URL) {
-  console.error("❌ CRITICAL: VITE_API_URL is not set in environment variables");
-  console.error("   Expected: https://hireboard-production.up.railway.app/api");
-  console.error("   This will cause all API calls to fail");
+if (!import.meta.env.VITE_API_URL) {
+  console.warn("⚠️ VITE_API_URL not set — defaulting to local backend:", API_URL);
 }
 
-console.log(`📝 Frontend API Base URL: ${API_URL || "NOT SET - USING RELATIVE PATHS"}`);
+console.log(`📝 Frontend API Base URL: ${API_URL}`);
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // by adding this field browser will send the cookies to server automatically, on every single req
+  withCredentials: true,
 });
 
 // Add response error logging
