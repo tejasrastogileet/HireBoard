@@ -125,8 +125,15 @@ function SessionPage() {
 
     const tryLeave = () => {
       try {
+        // Construct full API URL
+        const apiUrl = import.meta.env.VITE_API_URL;
+        if (!apiUrl) {
+          console.warn("⚠️ VITE_API_URL is not set, cannot leave session");
+          return;
+        }
+        
         // use fetch with keepalive so browser attempts to send on unload
-        fetch(`${import.meta.env.VITE_API_URL.replace(/\/+$/, "")}/sessions/${id}/leave`, {
+        fetch(`${apiUrl}/sessions/${id}/leave`, {
           method: "POST",
           keepalive: true,
           credentials: "include",
