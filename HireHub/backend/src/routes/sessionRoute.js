@@ -17,11 +17,11 @@ const router = express.Router();
    PUBLIC ROUTES (NO CLERK)
 ----------------------------------------*/
 router.get("/active", getActiveSessions);
-router.get("/my-recent", getMyRecentSessions);
 
 /* ---------------------------------------
-   PROTECTED ROUTES
+   PROTECTED ROUTES (MUST come AFTER public routes)
 ----------------------------------------*/
+router.get("/my-recent", protectRoute, getMyRecentSessions);
 router.post("/", protectRoute, createSession);
 router.get("/:id", protectRoute, getSessionById);
 router.post("/:id/join", protectRoute, joinSession);

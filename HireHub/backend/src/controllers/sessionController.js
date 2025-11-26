@@ -71,7 +71,13 @@ export async function getActiveSessions(_, res) {
 
 export async function getMyRecentSessions(req, res) {
   try {
+    if (!req.user) {
+      console.error("❌ getMyRecentSessions: req.user is not set");
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const userId = req.user._id;
+    console.log(`📝 Getting recent sessions for user: ${userId}`);
 
     const sessions = await Session.find({
       status: "completed",
@@ -80,9 +86,11 @@ export async function getMyRecentSessions(req, res) {
       .sort({ createdAt: -1 })
       .limit(20);
 
+    console.log(`✅ Found ${sessions.length} recent sessions for user: ${userId}`);
     res.status(200).json({ sessions });
   } catch (error) {
-    console.error("Error in getMyRecentSessions controller:", error);
+    console.error("❌ Error in getMyRecentSessions controller:", error.message);
+    console.error("   Stack:", error.stack);
     const payload = { message: "Internal Server Error" };
     if (process.env.NODE_ENV !== "production") payload.error = error.message || error;
     res.status(500).json(payload);

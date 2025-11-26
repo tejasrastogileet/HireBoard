@@ -84,6 +84,17 @@ app.use((req, res, next) => {
 console.log("✅ Clerk middleware loaded");
 
 /* ----------------------------------------------------------
+   4.5) REQUEST LOGGING (for debugging)
+----------------------------------------------------------- */
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    console.log(`\n📨 API Request: ${req.method} ${req.path}`);
+    console.log(`   Full URL: ${req.originalUrl}`);
+  }
+  next();
+});
+
+/* ----------------------------------------------------------
    5) API ROUTES
 ----------------------------------------------------------- */
 app.use("/api/inngest", serve({ client: inngest, functions }));
