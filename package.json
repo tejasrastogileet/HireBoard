@@ -1,0 +1,11 @@
+{
+  "name": "hireboard-monorepo-root",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "cd HireHub/backend && npm install --omit=dev && npm run start"
+  }
+}
