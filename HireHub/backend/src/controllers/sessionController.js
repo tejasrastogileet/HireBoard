@@ -71,9 +71,21 @@ export async function getActiveSessions(_, res) {
 
 export async function getMyRecentSessions(req, res) {
   try {
-    if (!req.user) {
-      console.error("❌ getMyRecentSessions: req.user is not set");
-      return res.status(401).json({ message: "Unauthorized" });
+    // Defensive checks + debugging logs to avoid crashes in production
+    console.log('\n🔎 getMyRecentSessions DEBUG:');
+    console.log('   req.auth exists:', !!req.auth);
+    try { console.log('   req.auth:', req.auth); } catch (e) { console.log('   req.auth logging failed'); }
+    try { console.log('   req.user:', req.user ? { id: req.user._id, clerkId: req.user.clerkId } : null); } catch (e) { console.log('   req.user logging failed'); }
+
+    if (!req.user || !req.user._id) {
+      console.error('❌ getMyRecentSessions: req.user or req.user._id is missing');
+      return res.status(401).json({
+        message: 'Unauthorized - missing user',
+        debug: {
+          hasAuth: !!req.auth,
+          authKeys: req.auth ? Object.keys(req.auth) : [],
+        },
+      });
     }
 
     const userId = req.user._id;
