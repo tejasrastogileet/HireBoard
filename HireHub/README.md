@@ -1,3 +1,79 @@
+## HireBoard - Collaborative Coding Interview Platform
+
+HireBoard is a full-stack web app for practicing coding problems and running collaborative pair-programming sessions with real-time chat and an admin dashboard to manage problems and users.
+
+Features
+- Practice Problems: Pre-curated problems plus admin-created custom problems
+- Live Sessions: Invite-code sessions for two participants with shared code editor
+- Real-time Chat: Socket.IO-powered messaging within sessions
+- Admin Dashboard: Create/edit/delete problems and manage users
+- Authentication: Clerk-based auth with a local dev bypass option
+
+Tech Stack
+- Backend: Node.js, Express, MongoDB (Mongoose), Socket.IO, Clerk, Inngest (optional)
+- Frontend: React + Vite, Clerk React, socket.io-client, Tailwind/DaisyUI
+
+Project structure
+```
+HireHub/
+├── backend/ (Express + Socket.IO)
+├── frontend/ (Vite + React)
+└── package.json (workspace)
+```
+
+Local development
+1) Backend
+```bash
+cd HireHub/backend
+npm install
+```
+Create `backend/.env` (example):
+```
+PORT=3000
+NODE_ENV=development
+DB_URL=mongodb+srv://YOUR_MONGODB_USERNAME:YOUR_MONGODB_PASSWORD@cluster.mongodb.net/hirehub
+CLERK_PUBLISHABLE_KEY=YOUR_CLERK_PUBLISHABLE_KEY
+CLERK_SECRET_KEY=YOUR_CLERK_SECRET_KEY
+ADMIN_CLERK_IDS=YOUR_CLERK_USER_ID
+CLIENT_URL=http://localhost:5173
+INNGEST_EVENT_KEY=YOUR_INNGEST_EVENT_KEY
+INNGEST_SIGNING_KEY=YOUR_INNGEST_SIGNING_KEY
+# Optional dev helpers:
+DISABLE_AUTH=false
+DEV_FAKE_CLERK_ID=dev_user
+```
+Start backend:
+```bash
+npm run dev
+```
+
+2) Frontend
+```bash
+cd HireHub/frontend
+npm install
+```
+Create `frontend/.env` (example):
+```
+VITE_CLERK_PUBLISHABLE_KEY=YOUR_CLERK_PUBLISHABLE_KEY
+VITE_API_URL=http://localhost:3000/api
+VITE_ADMIN_CLERK_IDS=YOUR_CLERK_USER_ID
+```
+Start frontend:
+```bash
+npm run dev
+```
+
+Deployment notes
+- Backend: host on Railway (or any VPS) to support persistent Socket.IO connections.
+- Frontend: host on Vercel (or Netlify) as a static site.
+
+Socket.IO notes
+- Socket.IO does not require an API key. Secure connections by validating auth during handshake, using CORS, and enabling TLS.
+- For horizontal scaling, add a Redis adapter and provide `REDIS_URL` to share socket state.
+
+If you want I can also produce a separate deployment steps file with exact step-by-step instructions for Vercel and Railway.
+
+License: MIT
 # HireBoard - Collaborative Coding Interview Platform
 
 A full-stack web application that enables developers to practice coding problems, conduct live pair-programming sessions with real-time chat, and manage problems through an admin panel.
