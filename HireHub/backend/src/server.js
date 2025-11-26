@@ -59,7 +59,8 @@ app.use(
       const allowed = [
         "http://localhost:5173",
         "http://localhost:5174",
-        "https://hire-board-eexv.vercel.app"
+        "https://hire-board-eexv.vercel.app",
+          "https://hire-board.vercel.app" 
       ];
 
       if (allowed.includes(origin)) return cb(null, true);
