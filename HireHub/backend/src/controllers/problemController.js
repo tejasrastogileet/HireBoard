@@ -31,11 +31,9 @@ export async function createProblem(req, res) {
     try { console.log('   req.user:', req.user ? { id: req.user._id, clerkId: req.user.clerkId } : null); } catch (e) { console.log('   req.user log failed'); }
     console.log('   body preview:', JSON.stringify(req.body).substring(0, 500));
 
-    // validate payload
     const parsed = problemSchema.parse(req.body);
     const payload = parsed;
 
-    // If starterCode is a string, parse it to an object
     if (typeof payload.starterCode === 'string') {
       try {
         payload.starterCode = JSON.parse(payload.starterCode);
@@ -45,7 +43,6 @@ export async function createProblem(req, res) {
       }
     }
 
-    // ensure a slug exists (simple fallback)
     if (!payload.slug && payload.title) {
       payload.slug = payload.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     }
@@ -57,7 +54,6 @@ export async function createProblem(req, res) {
       console.log(`✅ Problem created: ${problem._id} (slug: ${problem.slug})`);
       res.status(201).json({ problem });
     } catch (dbErr) {
-      // Handle duplicate key (slug) nicely
       if (dbErr && dbErr.code === 11000) {
         console.warn('⚠️ Duplicate slug detected when creating problem:', dbErr.keyValue || dbErr.message);
         return res.status(409).json({ message: 'Problem with the same slug already exists', detail: dbErr.keyValue || dbErr.message });
@@ -103,7 +99,6 @@ export async function getProblemById(req, res) {
 export async function updateProblem(req, res) {
   try {
     const { id } = req.params;
-    // validate partial update
     const parsed = problemUpdateSchema.parse(req.body);
     const updated = await Problem.findByIdAndUpdate(id, parsed, { new: true });
     if (!updated) return res.status(404).json({ message: "Problem not found" });

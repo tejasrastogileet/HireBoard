@@ -19,9 +19,6 @@ export async function createSession(req, res) {
     const callId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const session = await Session.create({ problem, difficulty, host: userId, callId });
 
-    // Video call creation removed (feature deprecated)
-
-    // Chat channel
     try {
       const channel = chatClient.channel("messaging", callId, {
         name: `${problem} Session`,

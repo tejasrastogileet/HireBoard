@@ -7,7 +7,6 @@ export function ThemeProvider({ children }) {
     try {
       const stored = localStorage.getItem("hb_theme");
       if (stored) return stored;
-      // If no stored preference, use OS-level preference
       if (window && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
         return "dark";
       }
@@ -20,7 +19,6 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const html = document.documentElement;
 
-    // Add transition class for smooth theme changes
     html.classList.add("theme-transition");
 
     if (theme === "dark") {
@@ -31,7 +29,6 @@ export function ThemeProvider({ children }) {
       html.setAttribute("data-theme", "light");
     }
 
-    // remove transition helper after animation finishes
     const t = setTimeout(() => html.classList.remove("theme-transition"), 350);
 
     try {

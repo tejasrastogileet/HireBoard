@@ -1,6 +1,3 @@
-// In-memory store for Socket.IO room access control
-// Maps room IDs (session.callId) to Sets of allowed Clerk IDs
-
 const allowed = new Map();
 
 export const addAllowed = (room, clerkId) => {
@@ -16,7 +13,6 @@ export const removeAllowed = (room, clerkId) => {
     allowed.get(room).delete(clerkId);
     console.log(`[SocketStore] Removed ${clerkId} from room ${room}. Remaining: ${allowed.get(room).size}`);
     
-    // Clean up empty rooms
     if (allowed.get(room).size === 0) {
       allowed.delete(room);
       console.log(`[SocketStore] Cleaned up empty room ${room}`);

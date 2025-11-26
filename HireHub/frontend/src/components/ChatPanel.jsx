@@ -2,12 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { Send, AlertCircle, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 
-/**
- * ChatPanel Component - Real-time chat interface for collaborative sessions
- * @param {Object} socket - Socket.IO socket instance from useSocket hook
- * @param {string} currentClerkId - Current user's Clerk ID
- * @param {string} participantName - Participant's display name (optional)
- */
 export const ChatPanel = ({ socket, currentClerkId, participantName = "Participant" }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -16,8 +10,6 @@ export const ChatPanel = ({ socket, currentClerkId, participantName = "Participa
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-
-  // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -26,7 +18,7 @@ export const ChatPanel = ({ socket, currentClerkId, participantName = "Participa
     scrollToBottom();
   }, [messages]);
 
-  // Listen for incoming messages
+
   useEffect(() => {
     if (!socket) return;
 
@@ -114,18 +106,15 @@ export const ChatPanel = ({ socket, currentClerkId, participantName = "Participa
     const text = e.target.value;
     setInput(text);
 
-    // Send typing indicator
     if (!isTyping && text.length > 0) {
       setIsTyping(true);
       socket?.emit("typing", { isTyping: true });
     }
 
-    // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Set new timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       socket?.emit("typing", { isTyping: false });

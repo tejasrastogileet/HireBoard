@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { useEffect } from "react";
 
-// admin link is shown when user's clerk id is included in VITE_ADMIN_CLERK_IDS
 const adminCsv = import.meta.env.VITE_ADMIN_CLERK_IDS || "";
 const ADMIN_IDS = adminCsv.split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -18,7 +17,6 @@ function Navbar() {
 
   const isActive = (path) => location.pathname === path;
   const isAdmin = !!user && ADMIN_IDS.includes(user.id);
-  // Copy ID removed per user preference
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-50">

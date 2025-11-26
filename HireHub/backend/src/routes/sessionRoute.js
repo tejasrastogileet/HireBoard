@@ -13,14 +13,8 @@ import {
 
 const router = express.Router();
 
-/* ---------------------------------------
-   PUBLIC ROUTES (NO CLERK)
-----------------------------------------*/
 router.get("/active", getActiveSessions);
 
-/* ---------------------------------------
-   PROTECTED ROUTES (MUST come AFTER public routes)
-----------------------------------------*/
 router.get("/my-recent", protectRoute, getMyRecentSessions);
 router.post("/", protectRoute, createSession);
 router.get("/:id", protectRoute, getSessionById);
