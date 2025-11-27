@@ -12,7 +12,7 @@ import { getDifficultyBadgeClass } from "../lib/utils";
 import { Loader2Icon, LogOutIcon } from "lucide-react";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import OutputPanel from "../components/OutputPanel";
-import { ChatPanel } from "../components/ChatPanel";
+import { FloatingChatButton } from "../components/FloatingChatButton";
 import { useSocket } from "../hooks/useSocket";
 
 function SessionPage() {
@@ -170,8 +170,8 @@ function SessionPage() {
 
       <div className="flex-1">
         <PanelGroup direction="horizontal">
-          {/* LEFT PANEL - CODE EDITOR & PROBLEM DETAILS */}
-          <Panel defaultSize={50} minSize={30}>
+          {/* FULL WIDTH - CODE EDITOR, PROBLEM DETAILS, OUTPUT */}
+          <Panel minSize={30}>
             <PanelGroup direction="vertical">
               {/* PROBLEM DSC PANEL */}
               <Panel defaultSize={50} minSize={20}>
@@ -323,25 +323,19 @@ function SessionPage() {
               </Panel>
             </PanelGroup>
           </Panel>
-
-          <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
-
-          {/* RIGHT PANEL - LIVE CHAT */}
-          <Panel defaultSize={50} minSize={30}>
-            <div className="h-full bg-base-200 p-4">
-              <ChatPanel
-                socket={socket}
-                currentClerkId={user?.id}
-                participantName={
-                  isHost 
-                    ? session?.participant?.name || "Participant"
-                    : session?.host?.name || "Host"
-                }
-              />
-            </div>
-          </Panel>
         </PanelGroup>
       </div>
+
+      {/* Floating Chat Button - Popup on Click */}
+      <FloatingChatButton
+        socket={socket}
+        currentClerkId={user?.id}
+        participantName={
+          isHost 
+            ? session?.participant?.name || "Participant"
+            : session?.host?.name || "Host"
+        }
+      />
     </div>
   );
 }
