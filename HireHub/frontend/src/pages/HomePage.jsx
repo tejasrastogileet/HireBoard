@@ -20,10 +20,10 @@ function HomePage() {
         <section className="glass-hero mx-auto max-w-4xl text-center">
           <div className="mb-4 inline-block px-3 py-1 rounded-full bg-white/60 text-sm text-gray-600">Real-time Collaboration</div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
-            Empower your hiring with collaborative technical interviews
+            Collaborative coding interviews and live problem-solving
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
-            HireBoard helps teams evaluate candidates through live code sessions, video collaboration, and structured problems.
+            Practice curated and admin-created problems, run live pair‑programming sessions with a shared editor, and collaborate via real‑time chat.
           </p>
 
           <div className="flex items-center justify-center gap-4">
@@ -38,20 +38,23 @@ function HomePage() {
         <section className="mt-20">
           <div className="grid md:grid-cols-3 gap-8">
             <div className="neumo p-6">
-              <div className="text-xl font-semibold mb-2">HD Video Call</div>
-              <p className="text-gray-600">Crystal clear video and audio for interviews.</p>
+              <div className="text-xl font-semibold mb-2">Practice Problems</div>
+              <p className="text-gray-600">Solve curated problems or admin-created challenges with starter code and difficulty metadata.</p>
             </div>
             <div className="neumo p-6">
-              <div className="text-xl font-semibold mb-2">Live Code Editor</div>
-              <p className="text-gray-600">Collaborate in real-time with syntax highlighting.</p>
+              <div className="text-xl font-semibold mb-2">Live Coding Sessions</div>
+              <p className="text-gray-600">Invite collaborators with a session code and work together in a shared, real‑time code editor.</p>
             </div>
             <div className="neumo p-6">
-              <div className="text-xl font-semibold mb-2">Easy Collaboration</div>
-              <p className="text-gray-600">Share screens, discuss, and learn together.</p>
+              <div className="text-xl font-semibold mb-2">Real-time Chat</div>
+              <p className="text-gray-600">In-session messaging powered by Socket.IO for instant collaboration and contextual discussion.</p>
             </div>
           </div>
         </section>
       </main>
+      <footer className="py-6 text-center text-sm text-gray-500">
+        Made with <span aria-hidden="true">❤️</span> by Tejasr_rastogi
+      </footer>
     </div>
   );
 }
