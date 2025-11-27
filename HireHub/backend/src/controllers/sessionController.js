@@ -1,4 +1,3 @@
-import { chatClient } from "../lib/stream.js";
 import { addAllowed, removeAllowed } from "../lib/socketStore.js";
 import Session from "../models/Session.js";
 import AuditLog from "../models/AuditLog.js";
@@ -19,17 +18,8 @@ export async function createSession(req, res) {
     const callId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const session = await Session.create({ problem, difficulty, host: userId, callId });
 
-    try {
-      const channel = chatClient.channel("messaging", callId, {
-        name: `${problem} Session`,
-        created_by_id: clerkId,
-        members: [clerkId],
-      });
-
-      await channel.create();
-    } catch (err) {
-      console.error("Warning: failed to create Stream chat channel", err);
-    }
+    // Stream chat channel creation removed; chat features disabled
+    console.log("ℹ️ Stream chat removed: skipping chat channel creation for session", callId);
 
     res.status(201).json({ session });
   } catch (error) {
@@ -145,8 +135,8 @@ export async function joinSession(req, res) {
     // Add participant to Socket.IO allowed list
     addAllowed(session.callId, clerkId);
 
-    const channel = chatClient.channel("messaging", session.callId);
-    await channel.addMembers([clerkId]);
+    // Stream chat removed: skipping adding members to chat channel
+    console.log("ℹ️ Stream chat removed: skipping addMembers for", session.callId);
 
     res.status(200).json({ session });
   } catch (error) {
@@ -178,12 +168,8 @@ export async function leaveSession(req, res) {
     // Remove from Socket.IO allowed list
     removeAllowed(session.callId, clerkId);
 
-    try {
-      const channel = chatClient.channel("messaging", session.callId);
-      await channel.removeMembers([clerkId]);
-    } catch (err) {
-      console.error("Failed to remove member:", err);
-    }
+    // Stream chat removed: skipping removal of members from chat channel
+    console.log("ℹ️ Stream chat removed: skipping removeMembers for", session.callId);
 
     session.participant = null;
     await session.save();
@@ -215,12 +201,8 @@ export async function endSession(req, res) {
     }
 
     // Remove video call deletion (video removed). Keep chat channel cleanup.
-    try {
-      const channel = chatClient.channel("messaging", session.callId);
-      await channel.delete();
-    } catch (err) {
-      console.warn("⚠️ Failed to delete chat channel:", err.message);
-    }
+    // Stream chat removed: skipping deletion of chat channel
+    console.log("ℹ️ Stream chat removed: skipping delete for", session.callId);
 
     session.status = "completed";
     await session.save();
@@ -248,13 +230,7 @@ export async function endAllSessions(req, res) {
 
     for (const session of sessions) {
       try {
-        try {
-          const channel = chatClient.channel("messaging", session.callId);
-          await channel.delete();
-        } catch (e) {
-          console.warn("⚠️ Failed to delete chat channel during endAllSessions:", e.message);
-        }
-
+        // Stream chat removed: skip chat channel deletion and mark session completed
         session.status = "completed";
         await session.save();
 

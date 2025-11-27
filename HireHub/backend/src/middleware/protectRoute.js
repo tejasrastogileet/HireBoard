@@ -1,5 +1,4 @@
 import User from "../models/User.js";
-import { upsertStreamUser } from "../lib/stream.js";
 
 export const protectRoute = (req, res, next) => {
   console.log("\n🔐 protectRoute CHECKING AUTH...");
@@ -46,16 +45,8 @@ export const protectRoute = (req, res, next) => {
       req.user = user;
       console.log(`✅ req.user set: ${user._id}`);
 
-      try {
-        await upsertStreamUser({
-          id: user.clerkId,
-          name: user.name,
-          image: user.profileImage || "",
-        });
-        console.log(`✅ Stream user upserted`);
-      } catch (streamError) {
-        console.warn(`⚠️ Stream upsert failed: ${streamError.message}`);
-      }
+      // Stream integration removed: no-op for user upsert
+      console.log("ℹ️ Stream integration removed: skipping user upsert");
 
       next();
     } catch (error) {
