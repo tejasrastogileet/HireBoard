@@ -1,17 +1,40 @@
-## HireBoard - Collaborative Coding Interview Platform
+# HireBoard - Collaborative Coding Interview Platform
 
-HireBoard is a full-stack web app for practicing coding problems and running collaborative pair-programming sessions with real-time chat and an admin dashboard to manage problems and users.
+A full-stack web application that enables developers to practice coding problems, conduct live pair-programming sessions with real-time chat, and manage problems through an admin panel.
 
-Features
-- Practice Problems: Pre-curated problems plus admin-created custom problems
-- Live Sessions: Invite-code sessions for two participants with shared code editor
-- Real-time Chat: Socket.IO-powered messaging within sessions
-- Admin Dashboard: Create/edit/delete problems and manage users
-- Authentication: Clerk-based auth with a local dev bypass option
+## 🚀 Live Deployment
 
-Tech Stack
-- Backend: Node.js, Express, MongoDB (Mongoose), Socket.IO, Clerk, Inngest (optional)
-- Frontend: React + Vite, Clerk React, socket.io-client, Tailwind/DaisyUI
+- **Frontend**: https://hire-board.vercel.app
+- **Backend API**: https://hireboard-production.up.railway.app/api
+- **Backend Health**: https://hireboard-production.up.railway.app/health
+
+## Features
+
+- **Practice Problems**: Browse and solve 5+ pre-curated coding problems plus admin-created custom problems
+- **Live Sessions**: Create invite-code-based coding sessions for two participants to collaborate in real-time
+- **Real-time Chat**: Socket.IO-powered messaging within sessions for live collaboration
+- **Admin Dashboard**: Create, edit, and delete coding problems with difficulty levels and starter code
+- **User Management**: Admins can manage user roles and permissions
+- **Dark Mode**: Toggle between light and dark themes
+- **Authentication**: Clerk-based authentication with development bypass for local testing
+
+## Tech Stack
+
+### Backend
+- **Node.js + Express**: REST API server
+- **MongoDB + Mongoose**: Database for users, problems, sessions, and audit logs
+- **Socket.IO**: Real-time bidirectional communication for sessions
+- **Clerk**: Authentication and user management
+- **Inngest**: Workflow orchestration
+
+### Frontend
+- **React 19 + Vite**: Fast, modern frontend with hot module replacement
+- **React Router**: Client-side routing
+- **Clerk React**: Authentication UI
+- **DaisyUI + Tailwind CSS**: Component library and styling
+- **socket.io-client**: WebSocket client for real-time updates
+- **Axios**: HTTP client for API calls
+- **react-hot-toast**: Toast notifications
 
 Project structure
 ```
@@ -63,34 +86,48 @@ Start frontend:
 npm run dev
 ```
 
-Deployment notes
-- Backend: host on Railway (or any VPS) to support persistent Socket.IO connections.
-- Frontend: host on Vercel (or Netlify) as a static site.
+## Deployment
+
+### Production Checklist
+- Set `NODE_ENV=production`
+- Ensure `ADMIN_CLERK_IDS` env var is configured
+- Disable `DISABLE_AUTH` flag (or keep unset)
+- Use production Clerk keys
+- Database connection string should point to production DB
+- `CLIENT_URL` should point to deployed frontend URL
+- `BACKEND_URL` should point to deployed backend URL
+- For scalability: replace in-memory socketStore with Redis
+
+### Deploying to Railway (Backend)
+
+1. Push code to GitHub
+2. Connect Railway to GitHub repo
+3. Set environment variables in Railway dashboard:
+   - `NODE_ENV=production`
+   - `DB_URL` (MongoDB connection string)
+   - `CLERK_PUBLISHABLE_KEY` (from Clerk dashboard)
+   - `CLERK_SECRET_KEY` (from Clerk dashboard)
+   - `ADMIN_CLERK_IDS` (your Clerk user ID)
+   - `CLIENT_URL=https://hire-board.vercel.app` (or your Vercel frontend URL)
+   - `BACKEND_URL=https://hireboard-production.up.railway.app` (or your Railway backend URL)
+   - `INNGEST_EVENT_KEY` (from Inngest dashboard)
+   - `INNGEST_SIGNING_KEY` (from Inngest dashboard)
+4. Railway will auto-detect Node.js and start the server
+
+### Deploying to Vercel (Frontend)
+
+1. Connect Vercel to GitHub repo
+2. Set root directory: `HireHub/frontend`
+3. Set environment variables:
+   - `VITE_CLERK_PUBLISHABLE_KEY` (from Clerk dashboard)
+   - `VITE_API_URL=https://hireboard-production.up.railway.app/api` (or your backend URL)
+   - `VITE_ADMIN_CLERK_IDS` (your Clerk user ID)
+4. Deploy (Vercel will auto-detect Vite and build)
 
 Socket.IO notes
 - Socket.IO does not require an API key. Secure connections by validating auth during handshake, using CORS, and enabling TLS.
 - For horizontal scaling, add a Redis adapter and provide `REDIS_URL` to share socket state.
-
-If you want I can also produce a separate deployment steps file with exact step-by-step instructions for Vercel and Railway.
-
 License: MIT
-# HireBoard - Collaborative Coding Interview Platform
-
-A full-stack web application that enables developers to practice coding problems, conduct live pair-programming sessions with real-time chat, and manage problems through an admin panel.
-
-## Features
-
-- **Practice Problems**: Browse and solve 5+ pre-curated coding problems plus admin-created custom problems
-- **Live Sessions**: Create invite-code-based coding sessions for two participants to collaborate in real-time
-- **Real-time Chat**: Socket.IO-powered messaging within sessions for live collaboration
-- **Admin Dashboard**: Create, edit, and delete coding problems with difficulty levels and starter code
-- **User Management**: Admins can manage user roles and permissions
-- **Dark Mode**: Toggle between light and dark themes
-- **Authentication**: Clerk-based authentication with development bypass for local testing
-
-## Tech Stack
-
-### Backend
 - **Node.js + Express**: REST API server
 - **MongoDB + Mongoose**: Database for users, problems, sessions, and audit logs
 - **Socket.IO**: Real-time bidirectional communication for sessions
@@ -348,19 +385,7 @@ MIT License
 
 ## Support
 
-For issues, questions, or contributions, please open an issue or pull request on GitHub.INNGEST_EVENT_KEY=your_inngest_event_key
-INNGEST_SIGNING_KEY=your_inngest_signing_key
-
-STREAM_API_KEY=your_stream_api_key
-STREAM_API_SECRET=your_stream_api_secret
-
-ADMIN_CLERK_IDS=user_xxx,user_yyy
-CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
-Frontend (frontend/.env):
-
-env
-Copy code
+For issues, questions, or contributions, please open an issue or pull request on GitHub.
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 VITE_API_URL=http://localhost:3000/api
 VITE_STREAM_API_KEY=your_stream_api_key
