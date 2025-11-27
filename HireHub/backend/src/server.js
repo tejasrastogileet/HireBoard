@@ -41,13 +41,19 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      const allowed = [
+      // dynamic allowed origins: keep localhost defaults and include any
+      // runtime-provided client/backend URLs (e.g. Vercel/Railway envs)
+      const allowed = new Set([
         "http://localhost:5173",
         "http://localhost:5174",
         "https://hire-board-eexv.vercel.app",
-        "https://hire-board.vercel.app" 
-      ];
-      if (allowed.includes(origin)) return cb(null, true);
+        "https://hire-board.vercel.app",
+      ]);
+      if (ENV.CLIENT_URL) allowed.add(ENV.CLIENT_URL);
+      if (ENV.BACKEND_URL) allowed.add(ENV.BACKEND_URL);
+      if (process.env.RAILWAY_STATIC_URL) allowed.add(`https://${process.env.RAILWAY_STATIC_URL}`);
+
+      if (allowed.has(origin)) return cb(null, true);
       if (origin.endsWith(".vercel.app")) return cb(null, true);
       console.log("❌ CORS Blocked:", origin);
       return cb(new Error("CORS Blocked: " + origin), false);
@@ -109,13 +115,17 @@ const start = async () => {
 
     const socketAllowed = (origin) => {
       if (!origin) return true;
-      const allowed = [
+      const allowed = new Set([
         "http://localhost:5173",
         "http://localhost:5174",
         "https://hire-board-eexv.vercel.app",
         "https://hire-board.vercel.app",
-      ];
-      if (allowed.includes(origin)) return true;
+      ]);
+      if (ENV.CLIENT_URL) allowed.add(ENV.CLIENT_URL);
+      if (ENV.BACKEND_URL) allowed.add(ENV.BACKEND_URL);
+      if (process.env.RAILWAY_STATIC_URL) allowed.add(`https://${process.env.RAILWAY_STATIC_URL}`);
+
+      if (allowed.has(origin)) return true;
       if (origin.endsWith(".vercel.app")) return true;
       return false;
     };
@@ -134,7 +144,8 @@ const start = async () => {
     });
 
     console.log("🔌 Socket.IO server initialized");
-    console.log(`📨 CORS origin configured for: ${ENV.CLIENT_URL || "all origins"}`);
+    const BACKEND_URL = ENV.BACKEND_URL || (process.env.RAILWAY_STATIC_URL ? `https://${process.env.RAILWAY_STATIC_URL}` : null) || `http://localhost:${ENV.PORT}`;
+    console.log(`📨 CORS origin configured for client: ${ENV.CLIENT_URL} | backend: ${BACKEND_URL}`);
 
     io.on("connection", async (socket) => {
       const { room, clerkId } = socket.handshake.query;
@@ -218,7 +229,8 @@ const start = async () => {
 
     http.listen(ENV.PORT, () => {
       console.log(`🚀 Server running on port ${ENV.PORT}`);
-      console.log(`📍 API URL: ${ENV.CLIENT_URL || "http://localhost:" + ENV.PORT}`);
+      console.log(`📍 API URL: ${BACKEND_URL}`);
+      console.log(`📍 Frontend CLIENT_URL: ${ENV.CLIENT_URL}`);
       console.log(`🔗 WebSocket ready for connections\n`);
     });
   } catch (e) {
