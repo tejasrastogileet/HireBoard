@@ -1,6 +1,6 @@
 # HireBoard - Collaborative Coding Interview Platform
 
-A full-stack web application that enables developers to practice coding problems, conduct live pair-programming sessions with real-time chat, and manage problems through an admin panel.
+A full-stack platform for practicing coding problems, collaborating in real-time pair-programming sessions with a shared code editor, chatting via Socket.IO, and managing custom problems through an admin dashboard.
 
 ## 🚀 Live Deployment
 
@@ -8,15 +8,15 @@ A full-stack web application that enables developers to practice coding problems
 - **Backend API**: https://hireboard-production.up.railway.app/api
 - **Backend Health**: https://hireboard-production.up.railway.app/health
 
-## Features
+## Core Features
 
-- **Practice Problems**: Browse and solve 5+ pre-curated coding problems plus admin-created custom problems
-- **Live Sessions**: Create invite-code-based coding sessions for two participants to collaborate in real-time
-- **Real-time Chat**: Socket.IO-powered messaging within sessions for live collaboration
-- **Admin Dashboard**: Create, edit, and delete coding problems with difficulty levels and starter code
-- **User Management**: Admins can manage user roles and permissions
-- **Dark Mode**: Toggle between light and dark themes
-- **Authentication**: Clerk-based authentication with development bypass for local testing
+- **Practice Problems**: Browse and solve curated plus admin-created coding problems with starter code and difficulty levels.
+- **Live Pair-Programming Sessions**: Invite collaborators via code and work together in a shared, real-time code editor.
+- **Real-time Chat**: Socket.IO-based in-session messaging for instant collaboration and discussion.
+- **Admin Dashboard**: Create, edit, and delete problems with full control over title, difficulty, description, and starter code.
+- **User Roles & Permissions**: Admin/user permission system for managing users and problem access.
+- **Dark Mode**: Persistent theme toggle using DaisyUI.
+- **Clerk Authentication**: Secure auth with development bypass helpers for local testing.
 
 ## Tech Stack
 
